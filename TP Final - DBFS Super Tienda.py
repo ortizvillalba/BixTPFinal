@@ -12,8 +12,8 @@ file_location = "/FileStore/tables/Supertienda.csv"
 file_type = "csv"
 
 # CSV options
-infer_schema = "false"
-first_row_is_header = "false"
+infer_schema = "true"  # Cambiado a "true" para inferir el esquema automáticamente
+first_row_is_header = "true"  # Cambiado a "true" para indicar que la primera fila es el encabezado
 delimiter = ","
 
 # The applied options are for CSV files. For other file types, these will be ignored.
@@ -24,6 +24,7 @@ df = spark.read.format(file_type) \
   .load(file_location)
 
 display(df)
+
 
 # COMMAND ----------
 
@@ -64,12 +65,13 @@ df.show(10)
 
 # COMMAND ----------
 
-# Ejemplo de visualización
 display(df)
 
-# Ejemplo de preprocesamiento (eliminar columnas no deseadas)
+# Elimino columnas no deseadas
 columnas_no_deseadas = ["Row ID", "Order ID", "Ship Date"]
 df = df.drop(*columnas_no_deseadas)
+
+display(df)
 
 # COMMAND ----------
 
@@ -157,4 +159,30 @@ Conclusión:
 La importancia relativa de las categorías puede variar según la región. Por ejemplo, en la región "South," "Furniture" contribuye significativamente, mientras que en la región "West," "Office Supplies" tiene una presencia más destacada.
 Este gráfico proporciona información valiosa sobre cómo las preferencias de compra pueden variar geográficamente, lo que puede ser útil para estrategias de marketing y gestión de inventario.
 """
+
+
+# COMMAND ----------
+
+from pyspark.sql.functions import to_date
+
+df = df.withColumn("Order Date", to_date(df["Order Date"], "MM/dd/yyyy"))
+
+from pyspark.sql.functions import sum
+
+df_ventas_temporal = df.groupBy("Order Date").agg(sum("Sales").alias("SumaVentas")).orderBy("Order Date")
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Convertir a DataFrame de pandas para visualización
+df_pandas = df_ventas_temporal.toPandas()
+
+# Gráfico de línea
+plt.figure(figsize=(12, 6))
+plt.plot(df_pandas["Order Date"], df_pandas["SumaVentas"], marker='o', linestyle='-')
+plt.xlabel('Fecha de Orden')
+plt.ylabel('Suma de Ventas')
+plt.title('Tendencia Temporal de Ventas')
+plt.show()
+
 
