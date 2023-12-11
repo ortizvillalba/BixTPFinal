@@ -1,1 +1,3 @@
 # BixTPFinal
+
+Autor: Andrés Ortiz
